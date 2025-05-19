@@ -79,8 +79,8 @@ tasks.named<JavaExec>("run") {
         if (envFile.exists()) {
             val props = java.util.Properties()
             props.load(envFile.inputStream())
-            props.forEach { key, value ->
-                environment(key.toString(), value)
+            props.entries.forEach { entry ->
+                environment(entry.key.toString(), entry.value)
             }
         }
     }
