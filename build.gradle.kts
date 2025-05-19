@@ -12,6 +12,13 @@ repositories {
     mavenCentral()
 }
 
+// Configure Java toolchain
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
+}
+
 dependencies {
     // Kotlin
     implementation("org.jetbrains.kotlin:kotlin-stdlib")
@@ -56,10 +63,25 @@ tasks.test {
 // Zadanie do kopiowania zależności do folderu lib
 tasks.register<Copy>("copyDependencies") {
     from(configurations.runtimeClasspath)
-    into("$buildDir/libs/dependencies")
+    into("${layout.buildDirectory}/libs/dependencies")
 }
 
 // Uruchomienie zadania copyDependencies po kompilacji
 tasks.named("build") {
     finalizedBy("copyDependencies")
+}
+
+// Konfiguracja dla uruchomienia aplikacji
+tasks.named<JavaExec>("run") {
+    // Przekazanie zmiennych środowiskowych z pliku .env jeśli istnieje
+    doFirst {
+        val envFile = file(".env")
+        if (envFile.exists()) {
+            val props = java.util.Properties()
+            props.load(envFile.inputStream())
+            props.forEach { key, value ->
+                environment(key.toString(), value)
+            }
+        }
+    }
 }
