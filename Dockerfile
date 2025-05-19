@@ -1,0 +1,1 @@
+# Definicja obrazu Docker
