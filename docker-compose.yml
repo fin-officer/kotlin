@@ -1,1 +1,53 @@
-# Konfiguracja Docker Compose
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: email-llm-processor
+    env_file: .env
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - mailhog
+    networks:
+      - app-network
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mailhog
+    ports:
+      - "1025:1025"   # SMTP server
+      - "8025:8025"   # Web UI
+    networks:
+      - app-network
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    networks:
+      - app-network
+
+  adminer:
+    image: adminer:latest
+    container_name: adminer
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./data:/data
+    environment:
+      - ADMINER_DEFAULT_SERVER=sqlite
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  ollama-data:
