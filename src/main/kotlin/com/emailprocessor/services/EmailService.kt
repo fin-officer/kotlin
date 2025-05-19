@@ -11,7 +11,8 @@ import java.time.LocalDateTime
  * Serwis do przetwarzania wiadomości email
  */
 class EmailService(
-    private val llmService: LlmService
+    private val llmService: LlmService,
+    private val advancedReplyService: AdvancedReplyService
 ) {
     /**
      * Przetwarza wiadomość email, wykonując analizę tonu
@@ -46,21 +47,44 @@ class EmailService(
     
     /**
      * Generuje tekst odpowiedzi na podstawie analizy wiadomości
+     * wykorzystując zaawansowany serwis odpowiedzi
      */
     fun generateReply(email: EmailMessage): String {
-        val analysis = email.toneAnalysis ?: return DEFAULT_REPLY
-        
-        // Dla bardziej zaawansowanej implementacji można użyć LLM do generowania odpowiedzi
-        return when {
-            analysis.urgency == Urgency.CRITICAL -> URGENT_REPLY
-            analysis.sentiment == Sentiment.VERY_NEGATIVE -> NEGATIVE_SENTIMENT_REPLY
-            else -> DEFAULT_REPLY
-        }
+        return advancedReplyService.generateReply(email)
     }
     
-    companion object {
-        private const val DEFAULT_REPLY = "Dziękujemy za wiadomość. Zajmiemy się nią wkrótce."
-        private const val URGENT_REPLY = "Dziękujemy za wiadomość. Zauważyliśmy, że sprawa jest pilna. Zajmiemy się nią priorytetowo."
-        private const val NEGATIVE_SENTIMENT_REPLY = "Dziękujemy za wiadomość. Przepraszamy za niedogodności. Postaramy się rozwiązać problem jak najszybciej."
+    /**
+     * Zapisuje otrzymaną wiadomość do pliku dla celów archiwalnych
+     */
+    fun archiveEmail(email: EmailMessage) {
+        try {
+            val archiveDir = java.io.File("data/archive")
+            if (!archiveDir.exists()) {
+                archiveDir.mkdirs()
+            }
+            
+            val timestamp = java.time.format.DateTimeFormatter
+                .ofPattern("yyyyMMdd_HHmmss")
+                .format(LocalDateTime.now())
+            
+            val sanitizedFrom = email.from.replace("[^a-zA-Z0-9]", "_")
+            val fileName = "${timestamp}_${sanitizedFrom}.txt"
+            
+            val archiveFile = java.io.File(archiveDir, fileName)
+            archiveFile.writeText("" + 
+                "From: ${email.from}\n" +
+                "To: ${email.to}\n" +
+                "Subject: ${email.subject}\n" +
+                "Received: ${email.receivedDate}\n" +
+                "Status: ${email.status}\n" +
+                "\n" +
+                "${email.content}\n"
+            )
+            
+            println("Zarchiwizowano wiadomość do pliku: ${archiveFile.absolutePath}")
+        } catch (e: Exception) {
+            println("Błąd podczas archiwizacji wiadomości: ${e.message}")
+            e.printStackTrace()
+        }
     }
 }

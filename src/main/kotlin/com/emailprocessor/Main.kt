@@ -35,7 +35,12 @@ class EmailLlmProcessor {
             model = config.getProperty("LLM_MODEL", "llama2")
         )
         
-        val emailService = EmailService(llmService)
+        val dbPath = config.getProperty("DATABASE_PATH", "data/emails.db")
+        
+        // Inicjalizacja zaawansowanego serwisu odpowiedzi
+        val advancedReplyService = AdvancedReplyService(dbPath)
+        
+        val emailService = EmailService(llmService, advancedReplyService)
         
         // Rejestracja tras Camel
         camelMain.configure().addRoutesBuilder(EmailProcessingRoute(

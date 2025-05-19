@@ -61,6 +61,9 @@ class EmailProcessingRoute(
             // Aktualizacja statusu w bazie danych
             updateEmailStatus(email.id!!, EmailStatus.PROCESSING)
             
+            // Archiwizacja wiadomości do pliku
+            emailService.archiveEmail(email)
+            
             // Przetwarzanie wiadomości przez serwis
             val processedEmail = emailService.processEmail(email)
             
